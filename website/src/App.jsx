@@ -9,10 +9,8 @@ import GarudPuran from "./page/GarudPuran";
 import AllComplaints from "./page/AllComplaints";
 
 // Protected Route Component for authenticated users only
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+const ProtectedRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -55,8 +53,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 };
 
 // Public Route Component for non-authenticated users only
-const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+const PublicRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -103,7 +101,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // Mixed Access Route Component (accessible to both authenticated and non-authenticated users)
-const MixedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const MixedRoute = ({ children }) => {
   return <>{children}</>;
 };
 

@@ -1,6 +1,6 @@
 import React from "react";
 
-const GalaxyLoader: React.FC = () => {
+const GalaxyLoader = () => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black">
       <div className="w-full max-w-2xl px-4 flex justify-center">

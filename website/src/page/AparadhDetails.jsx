@@ -5,17 +5,9 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 import { useHorrorToast } from "../components/ToastAlert/HorrorToast";
 
-interface FormData {
-  kyaHua: string;
-  doshiNaam: string;
-  doshiUmar: string;
-  doshiGender: string;
-  doshiPehchan: string;
-}
-
-const AparadhDetails: React.FC = () => {
+const AparadhDetails = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     kyaHua: "",
     doshiNaam: "",
     doshiUmar: "",
@@ -24,22 +16,18 @@ const AparadhDetails: React.FC = () => {
   });
 
   const [labelAnimation, setLabelAnimation] = useState(false);
-  const [typingStates, setTypingStates] = useState<Record<string, boolean>>({});
+  const [typingStates, setTypingStates] = useState({});
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [bloodDrip, setBloodDrip] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { showToast, ToastContainer } = useHorrorToast();
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const typingTimeouts = useRef<
-    Record<string, ReturnType<typeof window.setTimeout>>
-  >({});
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const typingTimeouts = useRef({});
+  const audioRef = useRef(null);
   const navigate = useNavigate();
 
-  const validateField = (field: keyof FormData, value: string): string => {
+  const validateField = (field, value) => {
     let errorMessage = "";
 
     switch (field) {
@@ -82,8 +70,9 @@ const AparadhDetails: React.FC = () => {
     }
     return errorMessage;
   };
+
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const kyaHuaError = validateField("kyaHua", formData.kyaHua);
     const doshiPehchanError = validateField(
@@ -243,32 +232,30 @@ const AparadhDetails: React.FC = () => {
     showToast("नाम छोड़ दिया गया", "success");
     setCurrentStep((prev) => prev + 1);
   };
+
   // Navigation handlers
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path) => {
     navigate(path);
     setIsMenuOpen(false);
   };
 
   // Typing effect handlers
-  const handleTypingStart = (fieldName: string) => {
+  const handleTypingStart = (fieldName) => {
     setTypingStates((prev) => ({ ...prev, [fieldName]: true }));
   };
 
-  const handleTypingStop = (fieldName: string) => {
+  const handleTypingStop = (fieldName) => {
     setTimeout(() => {
       setTypingStates((prev) => ({ ...prev, [fieldName]: false }));
     }, 1000);
   };
 
   // Enhanced input change handler with typing effect
-  const handleInputChangeWithTyping = (
-    field: keyof FormData,
-    value: string
-  ) => {
+  const handleInputChangeWithTyping = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,

@@ -1,19 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Skull, X, AlertTriangle } from "lucide-react";
 
-interface ToastProps {
-  id: string;
-  message: string;
-  type?: "success" | "error" | "warning" | "info";
-  onClose: (id: string) => void;
-}
-
-const Toast: React.FC<ToastProps> = ({
-  id,
-  message,
-  type = "info",
-  onClose,
-}) => {
+const Toast = ({ id, message, type = "info", onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   // Use useCallback to prevent onClose dependency changes
@@ -135,27 +123,15 @@ const Toast: React.FC<ToastProps> = ({
 
 // Main Hook
 export const useHorrorToast = () => {
-  const [toasts, setToasts] = useState<
-    Array<{
-      id: string;
-      message: string;
-      type: "success" | "error" | "warning" | "info";
-    }>
-  >([]);
+  const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback(
-    (
-      message: string,
-      type: "success" | "error" | "warning" | "info" = "info"
-    ) => {
-      const id = Date.now().toString();
-      setToasts((prev) => [...prev, { id, message, type }]);
-    },
-    []
-  );
+  const showToast = useCallback((message, type = "info") => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  }, []);
 
   // Stable removeToast function
-  const removeToast = useCallback((id: string) => {
+  const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 

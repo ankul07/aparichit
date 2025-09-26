@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 
-interface HorrorStarterProps {
-  onNavigate?: () => void;
-}
-
-const HorrorStarter: React.FC<HorrorStarterProps> = ({ onNavigate }) => {
+const HorrorStarter = ({ onNavigate }) => {
   const [videoEnded, setVideoEnded] = useState(false);
   const [showButton, setShowButton] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const video = videoRef.current;

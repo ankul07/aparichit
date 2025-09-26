@@ -16,8 +16,8 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const GarudPuran: React.FC = () => {
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+const GarudPuran = () => {
+  const cardRefs = useRef([]);
   const [bloodDrip, setBloodDrip] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [narakData, setNarakData] = useState([]);
@@ -70,7 +70,7 @@ const GarudPuran: React.FC = () => {
   }, []);
 
   // Pagination handlers
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       fetchGarudPurans(page);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -82,7 +82,7 @@ const GarudPuran: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path) => {
     navigate(path);
     setIsMenuOpen(false);
   };
@@ -106,12 +106,12 @@ const GarudPuran: React.FC = () => {
     return () => observer.disconnect();
   }, [narakData]);
 
-  const getRandomIcon = (index: number) => {
+  const getRandomIcon = (index) => {
     const icons = [Skull, Flame, Eye, Zap];
     return icons[index % icons.length];
   };
 
-  const getAnimationClass = (index: number) => {
+  const getAnimationClass = (index) => {
     const animations = [
       "slide-in-left",
       "slide-in-right",
@@ -260,7 +260,7 @@ const GarudPuran: React.FC = () => {
       {/* Cards Container */}
       <div className="relative z-10 px-4 pb-16">
         <div className="max-w-6xl mx-auto space-y-8">
-          {narakData.map((narak: any, index: number) => {
+          {narakData.map((narak, index) => {
             const IconComponent = getRandomIcon(index);
             return (
               <div

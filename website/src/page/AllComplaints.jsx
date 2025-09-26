@@ -18,43 +18,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
-
-interface Complaint {
-  crimeId: string;
-  user: User;
-  kyaHua: string;
-  doshiNaam: string;
-  doshiUmar: string;
-  doshiGender: string;
-  doshiPehchan: string;
-  status: string;
-  incidentDate: string;
-  timestamp: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PaginationData {
-  currentPage: number;
-  totalPages: number;
-  totalCrimes: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  limit: number;
-}
-
-const AllComplaints: React.FC = () => {
+const AllComplaints = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [bloodDrip, setBloodDrip] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [pagination, setPagination] = useState<PaginationData>({
+  const [complaints, setComplaints] = useState([]);
+  const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalCrimes: 0,
@@ -62,7 +32,7 @@ const AllComplaints: React.FC = () => {
     hasPrevPage: false,
     limit: 3,
   });
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   console.log(complaints);
   const navigate = useNavigate();
   const complaintsPerPage = 3;
@@ -78,7 +48,7 @@ const AllComplaints: React.FC = () => {
   }, []);
 
   // Fetch complaints from API
-  const fetchComplaints = async (page: number = 1) => {
+  const fetchComplaints = async (page = 1) => {
     try {
       setLoading(true);
       setError("");
@@ -97,7 +67,7 @@ const AllComplaints: React.FC = () => {
       } else {
         setError("डेटा लोड करने में समस्या हुई");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching complaints:", error);
       if (error.response?.status === 401) {
         navigate("/login");
@@ -121,7 +91,7 @@ const AllComplaints: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path) => {
     navigate(path);
     setIsMenuOpen(false);
   };
@@ -143,7 +113,7 @@ const AllComplaints: React.FC = () => {
     }
   };
 
-  const goToPage = (page: number) => {
+  const goToPage = (page) => {
     setCurrentPage(page);
     fetchComplaints(page);
   };

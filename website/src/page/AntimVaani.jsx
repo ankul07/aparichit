@@ -1,15 +1,16 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const AparichitVaani: React.FC = () => {
+const AntimVaani = () => {
   const navigate = useNavigate();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
-  const [videoStarted, setVideoStarted] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const videoRef = useRef(null);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [videoStarted, setVideoStarted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
 
   const videourl =
-    "https://res.cloudinary.com/dkgfdtk2v/video/upload/v1717632667/Video_1_g4cd60.mp4";
+    "https://res.cloudinary.com/dkgfdtk2v/video/upload/v1717646686/Video_2_ss3ymn.mp4";
 
   useEffect(() => {
     // Check if device is mobile
@@ -24,7 +25,7 @@ const AparichitVaani: React.FC = () => {
       navigate("/", { replace: true });
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e) => {
       if (
         e.key === "F5" ||
         (e.ctrlKey && (e.key === "r" || e.key === "R")) ||
@@ -53,49 +54,74 @@ const AparichitVaani: React.FC = () => {
   }, [navigate]);
 
   const handleVideoEnd = () => {
-    navigate("/auth", { replace: true });
+    navigate("/all-complaints", { replace: true });
+  };
+
+  const startVideo = async () => {
+    if (videoRef.current) {
+      try {
+        // First try to play with sound
+        videoRef.current.muted = false;
+        await videoRef.current.play();
+        setNeedsUserInteraction(false);
+      } catch (error) {
+        // If failed, try muted first then unmute
+        try {
+          videoRef.current.muted = true;
+          await videoRef.current.play();
+
+          // After successful muted play, try to unmute
+          setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.muted = false;
+            }
+          }, 100);
+          setNeedsUserInteraction(false);
+        } catch (mutedError) {
+          // If even muted fails, show click prompt
+          console.log("Autoplay blocked, user interaction needed");
+          setNeedsUserInteraction(true);
+        }
+      }
+    }
   };
 
   const handleVideoLoad = () => {
     setIsVideoReady(true);
     setTimeout(() => {
       setVideoStarted(true);
-      if (videoRef.current) {
-        videoRef.current.muted = false;
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            console.log("Auto-play prevented:", error);
-            if (videoRef.current) {
-              videoRef.current.muted = true;
-              videoRef.current.play().then(() => {
-                if (videoRef.current) {
-                  videoRef.current.muted = false;
-                }
-              });
-            }
-          });
-        }
-      }
+      startVideo();
     }, 100);
   };
 
-  const handleVideoError = (
-    error: React.SyntheticEvent<HTMLVideoElement, Event>
-  ) => {
+  const handleVideoError = (error) => {
     console.error("Video loading error:", error);
   };
 
   const handleUserInteraction = () => {
-    if (videoRef.current && videoRef.current.paused) {
-      videoRef.current.muted = false;
-      videoRef.current.play();
+    if (needsUserInteraction || (videoRef.current && videoRef.current.paused)) {
+      if (videoRef.current) {
+        videoRef.current.muted = false;
+        videoRef.current.play();
+        setNeedsUserInteraction(false);
+      }
     }
   };
 
+  // Force video play on component mount
+  useEffect(() => {
+    if (isVideoReady && videoRef.current) {
+      const timer = setTimeout(() => {
+        startVideo();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isVideoReady]);
+
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-hidden cursor-pointer"
       onClick={handleUserInteraction}
       style={{
         backgroundImage: `url("/videocave.jpg")`,
@@ -148,6 +174,19 @@ const AparichitVaani: React.FC = () => {
         ))}
       </div>
 
+      {/* Click to play message - only show when user interaction is needed */}
+      {needsUserInteraction && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black bg-opacity-50">
+          <div className="bg-white text-black px-6 py-4 rounded-lg text-center shadow-lg">
+            <p className="text-lg font-semibold mb-2">🔥 Antim Vaani 🔥</p>
+            <p className="text-sm">Click anywhere to start the video</p>
+            <p className="text-xs mt-1 opacity-70">
+              कहीं भी क्लिक करें वीडियो शुरू करने के लिए
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Video Container with Fire Frame */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div
@@ -196,6 +235,7 @@ const AparichitVaani: React.FC = () => {
             playsInline
             disablePictureInPicture
             controlsList="nodownload nofullscreen noremoteplaybook"
+            preload="metadata"
             className={`w-full h-full transition-opacity duration-500 relative z-0 ${
               !isVideoReady ? "opacity-0" : "opacity-100"
             }`}
@@ -205,7 +245,6 @@ const AparichitVaani: React.FC = () => {
               objectFit: isMobile ? "cover" : "cover",
               borderRadius: isMobile ? "8px" : "10px",
             }}
-            preload="auto"
           >
             <source src={videourl} type="video/mp4" />
             Your browser does not support the video tag.
@@ -216,18 +255,16 @@ const AparichitVaani: React.FC = () => {
       {/* Overlay for interactions */}
       <div
         className="absolute inset-0 bg-transparent"
-        onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
-        onDragStart={(e: React.DragEvent) => e.preventDefault()}
-        style={
-          {
-            pointerEvents: "auto",
-            userSelect: "none",
-            WebkitUserSelect: "none",
-            MozUserSelect: "none",
-            msUserSelect: "none",
-            WebkitTouchCallout: "none",
-          } as React.CSSProperties
-        }
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+        style={{
+          pointerEvents: "auto",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MozUserSelect: "none",
+          msUserSelect: "none",
+          WebkitTouchCallout: "none",
+        }}
       />
 
       <style>{`
@@ -321,4 +358,4 @@ const AparichitVaani: React.FC = () => {
   );
 };
 
-export default AparichitVaani;
+export default AntimVaani;

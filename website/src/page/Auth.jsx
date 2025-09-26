@@ -5,14 +5,14 @@ const API_URL = import.meta.env.VITE_API_URL;
 import axios from "axios";
 import { useHorrorToast } from "../components/ToastAlert/HorrorToast";
 
-const Auth: React.FC = () => {
+const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isDarkPulse, setIsDarkPulse] = useState(false);
   const [bloodDrip, setBloodDrip] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -42,7 +42,7 @@ const Auth: React.FC = () => {
     return () => clearInterval(dripInterval);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -62,7 +62,7 @@ const Auth: React.FC = () => {
 
   // Form validation
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors = {};
 
     if (!isLogin && !formData.fullName.trim()) {
       newErrors.fullName = "नरक में भी नाम चाहिए होता है!";
@@ -86,7 +86,7 @@ const Auth: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -138,7 +138,7 @@ const Auth: React.FC = () => {
           showToast("पंजीकरण असफल! पुनः प्रयास करें!", "error");
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       // console.error("Auth error:", error);
 
       let errorMessage = "अज्ञात त्रुटि! नरक में भी कोई समस्या है!";
@@ -180,7 +180,7 @@ const Auth: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path) => {
     navigate(path);
     setIsMenuOpen(false);
   };
