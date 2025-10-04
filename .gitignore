@@ -2,3 +2,9 @@
 /server/node_modules
 /server/.env
 /web/.env 
+
+
+/aparichit/node_modules
+/aparichit/android/app/build/
+/aparichit/android/app/release/
+*.apk
