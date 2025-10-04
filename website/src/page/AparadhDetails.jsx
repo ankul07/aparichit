@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Menu, X, Skull, FileText } from "lucide-react";
+import { Menu, X, Skull, FileText, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,6 +20,7 @@ const AparadhDetails = () => {
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [bloodDrip, setBloodDrip] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast, ToastContainer } = useHorrorToast();
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -34,46 +35,36 @@ const AparadhDetails = () => {
       case "kyaHua":
         if (value.length < 10) {
           errorMessage = "कम से कम 10 अक्षर लिखें";
-          showToast(
-            "घटना का विवरण कम से कम 10 अक्षर में लिखना जरूरी है",
-            "error"
-          );
         }
         if (value.length > 1000) {
           errorMessage = "1000 अक्षरों से ज्यादा नहीं लिख सकते";
-          showToast(
-            "घटना का विवरण 1000 अक्षरों से ज्यादा नहीं हो सकता",
-            "error"
-          );
         }
         break;
       case "doshiNaam":
         if (value.length > 0 && value.length < 2) {
           errorMessage = "कम से कम 2 अक्षर लिखें";
-          showToast("नाम में कम से कम 2 अक्षर होने चाहिए", "error");
         }
         if (value.length > 100) {
           errorMessage = "100 अक्षरों से ज्यादा नहीं लिख सकते";
-          showToast("नाम 100 अक्षरों से ज्यादा नहीं हो सकता", "error");
         }
         break;
       case "doshiPehchan":
         if (value.length < 10) {
           errorMessage = "कम से कम 10 अक्षर लिखें";
-          showToast("पहचान में कम से कम 10 अक्षर लिखना जरूरी है", "error");
         }
         if (value.length > 1000) {
           errorMessage = "1000 अक्षरों से ज्यादा नहीं लिख सकते";
-          showToast("पहचान 1000 अक्षरों से ज्यादा नहीं हो सकती", "error");
         }
         break;
     }
     return errorMessage;
   };
 
-  // Handle form submission
+  // Handle form submission with loading
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate all fields
     const kyaHuaError = validateField("kyaHua", formData.kyaHua);
     const doshiPehchanError = validateField(
       "doshiPehchan",
@@ -83,10 +74,22 @@ const AparadhDetails = () => {
       formData.doshiNaam !== "unknown"
         ? validateField("doshiNaam", formData.doshiNaam)
         : "";
+
     if (kyaHuaError || doshiPehchanError || doshiNaamError) {
-      showToast("कृपया सभी जानकारी सही तरीके से भरें", "error");
+      if (kyaHuaError)
+        showToast(
+          "घटना का विवरण कम से कम 10 अक्षर में लिखना जरूरी है",
+          "error"
+        );
+      if (doshiPehchanError)
+        showToast("पहचान में कम से कम 10 अक्षर लिखना जरूरी है", "error");
+      if (doshiNaamError)
+        showToast("नाम में कम से कम 2 अक्षर होने चाहिए", "error");
       return;
     }
+
+    setIsSubmitting(true);
+
     try {
       const authToken = localStorage.getItem("authToken");
       const response = await axios.post(`${API_URL}/crime/addcrime`, formData, {
@@ -102,6 +105,12 @@ const AparadhDetails = () => {
       }, 3000);
     } catch (error) {
       console.log(error);
+      showToast(
+        "शिकायत दर्ज करने में त्रुटि हुई। कृपया पुनः प्रयास करें।",
+        "error"
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -126,19 +135,16 @@ const AparadhDetails = () => {
         audio.autoplay = true;
         audioRef.current = audio;
 
-        // Multiple attempts to play
         const playAudio = async () => {
           try {
             await audio.play();
             setAudioPlayed(true);
           } catch (error) {
-            // Silent fallback - try again after tiny delay
             setTimeout(async () => {
               try {
                 await audio.play();
                 setAudioPlayed(true);
               } catch (e) {
-                // Final fallback - play on any user interaction silently
                 const silentPlay = async () => {
                   try {
                     await audio.play();
@@ -166,10 +172,7 @@ const AparadhDetails = () => {
           }
         };
 
-        // Try to play immediately
         playAudio();
-
-        // Also try after a small delay
         setTimeout(playAudio, 500);
         setTimeout(playAudio, 1000);
       } catch (error) {
@@ -179,7 +182,6 @@ const AparadhDetails = () => {
 
     initializeAudio();
 
-    // Cleanup function
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -202,6 +204,10 @@ const AparadhDetails = () => {
     if (currentStep === 1) {
       const error = validateField("kyaHua", formData.kyaHua);
       if (error) {
+        showToast(
+          "घटना का विवरण कम से कम 10 अक्षर में लिखना जरूरी है",
+          "error"
+        );
         canProceed = false;
       } else {
         showToast("घटना का विवरण दर्ज हो गया", "success");
@@ -211,6 +217,7 @@ const AparadhDetails = () => {
     } else if (currentStep === 3 && formData.doshiNaam !== "unknown") {
       const error = validateField("doshiNaam", formData.doshiNaam);
       if (error) {
+        showToast("नाम में कम से कम 2 अक्षर होने चाहिए", "error");
         canProceed = false;
       } else {
         showToast("दोषी का नाम दर्ज हो गया", "success");
@@ -254,28 +261,19 @@ const AparadhDetails = () => {
     }, 1000);
   };
 
-  // Enhanced input change handler with typing effect
-  const handleInputChangeWithTyping = (field, value) => {
+  // Simple input change handler without validation
+  const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
 
-    // Validation
-    const error = validateField(field, value);
-    setValidationErrors((prev) => ({
-      ...prev,
-      [field]: error,
-    }));
-
     handleTypingStart(field);
 
-    // Clear existing timeout
     if (typingTimeouts.current[field]) {
       clearTimeout(typingTimeouts.current[field]);
     }
 
-    // Set new timeout
     typingTimeouts.current[field] = setTimeout(() => {
       handleTypingStop(field);
     }, 500);
@@ -298,21 +296,13 @@ const AparadhDetails = () => {
             <div className="fire-frame-border backdrop-blur-xl bg-indigo-900/30 rounded-xl shadow-2xl p-6">
               <textarea
                 value={formData.kyaHua}
-                onChange={(e) =>
-                  handleInputChangeWithTyping("kyaHua", e.target.value)
-                }
+                onChange={(e) => handleInputChange("kyaHua", e.target.value)}
                 className={`w-full h-40 text-white text-lg placeholder-blue-300 bg-transparent resize-none outline-none border-none`}
                 placeholder="यहाँ विस्तार से बताएं कि क्या हुआ था..."
               />
             </div>
 
-            {validationErrors.kyaHua && (
-              <p className="text-red-400 text-center mt-4 font-bold">
-                {validationErrors.kyaHua}
-              </p>
-            )}
-
-            {formData.kyaHua.trim() && !validationErrors.kyaHua && (
+            {formData.kyaHua.trim() && (
               <button
                 type="button"
                 onClick={handleNext}
@@ -345,7 +335,7 @@ const AparadhDetails = () => {
                     value="male"
                     checked={formData.doshiGender === "male"}
                     onChange={(e) =>
-                      handleInputChangeWithTyping("doshiGender", e.target.value)
+                      handleInputChange("doshiGender", e.target.value)
                     }
                     className="mr-4 w-6 h-6 text-purple-400 bg-transparent border-2 border-purple-300 focus:ring-2 focus:ring-purple-400 appearance-none rounded-full relative checked:bg-purple-400/30 checked:border-purple-400"
                   />
@@ -361,7 +351,7 @@ const AparadhDetails = () => {
                     value="female"
                     checked={formData.doshiGender === "female"}
                     onChange={(e) =>
-                      handleInputChangeWithTyping("doshiGender", e.target.value)
+                      handleInputChange("doshiGender", e.target.value)
                     }
                     className="mr-4 w-6 h-6 text-purple-400 bg-transparent border-2 border-purple-300 focus:ring-2 focus:ring-purple-400 appearance-none rounded-full relative checked:bg-purple-400/30 checked:border-purple-400"
                   />
@@ -402,22 +392,14 @@ const AparadhDetails = () => {
                 value={
                   formData.doshiNaam === "unknown" ? "" : formData.doshiNaam
                 }
-                onChange={(e) =>
-                  handleInputChangeWithTyping("doshiNaam", e.target.value)
-                }
+                onChange={(e) => handleInputChange("doshiNaam", e.target.value)}
                 className="w-full text-white text-xl placeholder-blue-300 bg-transparent outline-none border-none"
                 placeholder="नाम दर्ज करें..."
               />
             </div>
 
-            {validationErrors.doshiNaam && (
-              <p className="text-red-400 text-center mt-4 font-bold">
-                {validationErrors.doshiNaam}
-              </p>
-            )}
-
             <div className="flex justify-center space-x-4 mt-8">
-              {formData.doshiNaam.trim() && !validationErrors.doshiNaam && (
+              {formData.doshiNaam.trim() && (
                 <button
                   type="button"
                   onClick={handleNext}
@@ -455,9 +437,7 @@ const AparadhDetails = () => {
               <input
                 type="number"
                 value={formData.doshiUmar}
-                onChange={(e) =>
-                  handleInputChangeWithTyping("doshiUmar", e.target.value)
-                }
+                onChange={(e) => handleInputChange("doshiUmar", e.target.value)}
                 className={`w-full text-white text-xl placeholder-blue-300 bg-transparent outline-none border-none`}
                 placeholder="उम्र दर्ज करें..."
                 min="1"
@@ -493,25 +473,27 @@ const AparadhDetails = () => {
               <textarea
                 value={formData.doshiPehchan}
                 onChange={(e) =>
-                  handleInputChangeWithTyping("doshiPehchan", e.target.value)
+                  handleInputChange("doshiPehchan", e.target.value)
                 }
                 className={`w-full h-32 text-white text-lg placeholder-blue-300 bg-transparent resize-none outline-none border-none `}
                 placeholder="दोषी की शारीरिक बनावट, कपड़े, या कोई विशेष पहचान बताएं..."
               />
             </div>
 
-            {validationErrors.doshiPehchan && (
-              <p className="text-red-400 text-center mt-4 font-bold">
-                {validationErrors.doshiPehchan}
-              </p>
-            )}
-
-            {formData.doshiPehchan.trim() && !validationErrors.doshiPehchan && (
+            {formData.doshiPehchan.trim() && (
               <button
                 type="submit"
-                className="mt-8 mx-auto block px-8 py-3 bg-gradient-to-r from-green-600/60 to-green-800/60 backdrop-blur-md border border-green-500/50 text-white font-bold rounded-lg transition-all duration-300 transform hover:scale-105 hover:from-green-600/80 hover:to-green-800/80 shadow-lg hover:shadow-green-500/30"
+                disabled={isSubmitting}
+                className="mt-8 mx-auto px-8 py-3 bg-gradient-to-r from-green-600/60 to-green-800/60 backdrop-blur-md border border-green-500/50 text-white font-bold rounded-lg transition-all duration-300 transform hover:scale-105 hover:from-green-600/80 hover:to-green-800/80 shadow-lg hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
               >
-                शिकायत दर्ज करें
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>दर्ज हो रहा है...</span>
+                  </>
+                ) : (
+                  "शिकायत दर्ज करें"
+                )}
               </button>
             )}
           </div>
@@ -702,21 +684,17 @@ const AparadhDetails = () => {
                 onClick={() => handleNavigation("/garuda-purana")}
                 className="w-16 h-16 bg-gradient-to-b from-red-900/80 to-red-950/90 border-2 border-red-700/60 rounded-full shadow-lg shadow-red-900/50 transition-all duration-500 hover:scale-110 hover:shadow-red-600/70 relative overflow-hidden"
               >
-                {/* Rotating horror effect */}
                 <div className="absolute inset-0 animate-spin duration-3000">
                   <Skull className="w-8 h-8 text-red-200 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                 </div>
 
-                {/* Blood drop effect */}
                 {bloodDrip && (
                   <div className="absolute top-2 right-3 w-1 h-6 bg-gradient-to-b from-red-600 to-red-900 animate-pulse"></div>
                 )}
 
-                {/* Glow effect */}
                 <div className="absolute inset-0 bg-red-600/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </button>
 
-              {/* Tooltip */}
               <div className="absolute right-20 top-1/2 transform -translate-y-1/2 bg-stone-900/90 text-red-200 px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none border border-red-800/50 shadow-lg">
                 गरुड़ पुराण
                 <div className="absolute left-full top-1/2 transform -translate-y-1/2 border-l-8 border-l-stone-900/90 border-t-4 border-b-4 border-t-transparent border-b-transparent"></div>
@@ -729,23 +707,19 @@ const AparadhDetails = () => {
                 onClick={() => handleNavigation("/all-complaints")}
                 className="w-16 h-16 bg-gradient-to-b from-red-900/80 to-red-950/90 border-2 border-red-700/60 rounded-full shadow-lg shadow-red-900/50 transition-all duration-500 hover:scale-110 hover:shadow-red-600/70 relative overflow-hidden"
               >
-                {/* Rotating horror effect */}
                 <div className="absolute inset-0 animate-spin duration-2000 animate-reverse">
                   <FileText className="w-8 h-8 text-red-200 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                 </div>
 
-                {/* Ember effect */}
                 <div className="absolute top-2 left-2 w-1 h-1 bg-orange-500 rounded-full animate-ping"></div>
                 <div
                   className="absolute bottom-3 right-2 w-1 h-1 bg-red-600 rounded-full animate-ping"
                   style={{ animationDelay: "1s" }}
                 ></div>
 
-                {/* Glow effect */}
                 <div className="absolute inset-0 bg-red-600/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </button>
 
-              {/* Tooltip */}
               <div className="absolute right-20 top-1/2 transform -translate-y-1/2 bg-stone-900/90 text-red-200 px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none border border-red-800/50 shadow-lg">
                 सभी शिकायतें
                 <div className="absolute left-full top-1/2 transform -translate-y-1/2 border-l-8 border-l-stone-900/90 border-t-4 border-b-4 border-t-transparent border-b-transparent"></div>
@@ -765,7 +739,6 @@ const AparadhDetails = () => {
               onClick={toggleMenu}
               className="w-12 h-12 bg-gradient-to-b from-red-900/80 to-red-950/90 border-2 border-red-700/60 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 relative overflow-hidden"
             >
-              {/* Rotating icon effect */}
               <div
                 className={`absolute inset-0 transition-transform duration-500 ${
                   isMenuOpen ? "rotate-180" : "rotate-0"
@@ -778,7 +751,6 @@ const AparadhDetails = () => {
                 )}
               </div>
 
-              {/* Blood effect */}
               {bloodDrip && (
                 <div className="absolute top-1 right-2 w-1 h-4 bg-gradient-to-b from-red-600 to-red-900 animate-pulse"></div>
               )}
@@ -789,7 +761,6 @@ const AparadhDetails = () => {
           {isMenuOpen && (
             <div className="absolute top-full left-0 right-0 mt-2 mx-4">
               <div className="bg-gradient-to-b from-stone-900/95 to-black/95 backdrop-blur-md border-2 border-red-700/60 rounded-lg shadow-2xl shadow-red-900/50 overflow-hidden">
-                {/* Menu items */}
                 <button
                   onClick={() => handleNavigation("/garuda-purana")}
                   className="w-full p-4 text-left hover:bg-red-900/30 transition-all duration-300 border-b border-red-800/30 group flex items-center space-x-3"
